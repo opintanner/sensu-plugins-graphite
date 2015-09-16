@@ -10,9 +10,11 @@
 #   the format of the hostname in the output if present.
 #
 # OUTPUT:
-#   Sensu event output with all dots changed to underlines in host name
+#   Sensu event output with all dots changed to underlines in hostname and sensu. prepended.
+#
 #   If -r or --reverse parameter given script put hostname in reverse order
 #   for better graphite tree view
+#
 #
 # PLATFORM:
 #   all
@@ -21,6 +23,7 @@
 #   none
 #
 # Copyright 2013 Peter Kepes <https://github.com/kepes>
+# Copyright 2015 Miika Kankare <https://github.com/opintanner>
 #
 # Released under the same terms as Sensu (the MIT license); see LICENSE
 # for details.
@@ -29,8 +32,12 @@ require 'json'
 # parse event
 event = JSON.parse(STDIN.read, symbolize_names: true)
 
+check_output = event[:check][:output]
 if ARGV[0] == '-r' || ARGV[0] == '--reverse'
-  puts event[:check][:output].gsub(event[:client][:name], event[:client][:name].split('.').reverse.join('.'))
+  check_output = check_output.gsub(event[:client][:name], event[:client][:name].split('.').reverse.join('.'))
 else
-  puts event[:check][:output].gsub(event[:client][:name], event[:client][:name].gsub('.', '_'))
+  check_output = check_output.gsub(event[:client][:name], event[:client][:name].gsub('.', '_'))
 end
+
+# Prepend sensu.
+puts check_output.split("\n").map{ |line| "sensu.#{line}" }
